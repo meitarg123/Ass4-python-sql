@@ -7,11 +7,11 @@ import sqlite3
 import atexit
 import sys
 from dto import Vaccine, Supplier, Clinic, Logistic
-from repositery import _repositery
+from repositery import repo
 
 
 def main():
-    repo = _repositery()
+   # repo = _repositery()
     inputfile = open("config.txt", "r")
     line = inputfile.readline()
     indexlist = line.split(",")
@@ -27,7 +27,6 @@ def main():
         line_by_list = line.split(",")
 
         if counter <= vaccines_amount:
-
             repo.vaccines.insert(line_by_list)
 
         if counter > vaccines_amount & counter < clinics_amount:

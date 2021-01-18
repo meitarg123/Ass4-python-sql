@@ -3,9 +3,9 @@ import atexit
 import sqlite3
 
 from dao import _Vaccines, _Suppliers, _Clinics, _Logistics
-from dto import Vaccine
 
-class _repositery:
+
+class repositery:
     def _init_(self):
         self._conn = sqlite3.connect('databsde.db')
         self.vaccines = _Vaccines(self.conn)
@@ -47,8 +47,6 @@ class _repositery:
         count_received INTEGER NOT NULL
         );
         """)
-
-
 
     def send_shipment(self, location, amount):
         cursor = self._conn
@@ -98,5 +96,6 @@ class _repositery:
         list = [total_inventory, total_demant, total_received, total_sent ]
         return list
 
-      #  repo = _repositery
-       # atexit.register(repo._close)
+
+repo = repositery
+#texit.register(repo._close)
