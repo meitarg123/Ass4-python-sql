@@ -1,4 +1,5 @@
 #Data Transfer Object
+
 class Vaccine:
     def _init_(self, id, date, supplier, quantity):
         self.id = id
@@ -6,11 +7,13 @@ class Vaccine:
         self.supplier = supplier
         self.quantity = quantity
 
+
 class Supplier:
     def _init_(self, id, name, logistic):
         self.id = id
         self.name = name
         self.logistic = logistic
+
 
 class Clinic:
     def _init_(self, id, location, demand, logistic):
@@ -18,6 +21,7 @@ class Clinic:
         self.location = location
         self.demand = demand
         self.logistic = logistic
+
 
 class Logistic:
     def _init_(self, id, name, count_sent, count_recive):

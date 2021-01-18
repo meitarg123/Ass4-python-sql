@@ -12,6 +12,9 @@ class _Vaccines:
         c = self._conn.cursor()
         c.execute("""SELECT id FROM vaccines WHERE  id =?""", [vaccine_id])
 
+    def creat_index(self):
+        ("""CREATE INDEX vaccins_by_date ON _Vaccines date """)
+
 
 class _Suppliers:
     def _init_(self, conn):
@@ -36,15 +39,16 @@ class _Clinics:
         c = self._conn.cursor()
         c.execute("""SELECT id FROM clinics WHERE  id =?""", [clinic_id])
 
-
-
-
+    def find_demand_by_location(self, location, amount):
+        c = self._conn.executr()
+        demand = c.execute("""SELECT demand FROM clinics WHERE location=?""", [location])
+        demand = demand-amount
 
 
 
 
 class _Logistics:
-    def _init_(self,conn):
+    def _init_(self, conn):
         self._conn = conn
 
     def insert(self, logistic):

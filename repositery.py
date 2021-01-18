@@ -14,9 +14,9 @@ class _Repository:
         self.logistics = _Logistics(self.conn)
         self.create_tables()
 
-        def _close(self):
+        def close(self):
             self._conn.commit()
-            self._conn.clode()
+            self._conn.close()
 
         def create_tables(self):
             self._conn.executescript("""
@@ -50,3 +50,34 @@ class _Repository:
 
             repo = _Repository
             atexit.register(repo._close)
+
+        def send_shipment(self, location, amount):
+            cursor = self._conn
+            tuple_clinics_by_location = cursor.execute("""SELECT * FROM clinics WHERE location=?""", [location])
+            tuple_clinics_by_location[2] = tuple_clinics_by_location[2]-amount
+            vaccine_by_date = cursor.execute("""SELECT * FROM vaccines ORDER BY date ASK """)
+            vaccine = vaccine_by_date.fetchone()
+            vaccsine_quantity = vaccine[3]
+            id =vaccine[0]
+            if vaccsine_quantity > amount:
+                vaccsine_quantity = vaccsine_quantity - amount
+                cursor.execute("""UPDATE vaccines SET quantity=vaccsine_quantity WHERE ID=?""", [id])
+            else:
+                while amount > 0:
+                    curr_id = vaccine[0]
+                    inventory = vaccine[3]
+                    if inventory > amount:
+                        inventory = inventory-amount
+                        cursor.execute("""UPDATE vaccines SET quantity=inventory WHERE ID=?""", [id])
+                        amount = 0
+                    else:
+                        amount = amount - inventory
+                        cursor.execute("""DELETE FROM vaccines WHERE id=?""", [curr_id])
+                    vaccine = vaccine_by_date.fetchone() #check if its in while(it should be in while out of else
+
+            logistic_id = tuple_clinics_by_location[3]
+            sent_inventory = cursor.execute("""SELECT count_sent FROM logistics WHERE id=?""", [logistic_id])
+            sent_inventory = sent_inventory+amount
+            cursor.execute(""" UPDATE logistics SET count_sent=sent_inventory WHERE id=?""", [logistic_id])
+
+        def receive_shipment(self, name, amount, date):
