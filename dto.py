@@ -24,8 +24,8 @@ class Clinic:
 
 
 class Logistic:
-    def _init_(self, id, name, count_sent, count_recive):
+    def _init_(self, id, name, count_sent, count_receive):
         self.id = id
         self.name = name
         self.count_sent = count_sent
-        self.count_recive = count_recive
+        self.count_receive = count_receive
