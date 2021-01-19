@@ -2,23 +2,20 @@
 # All of these are meant to be Singleton
 
 class _Vaccines:
-    def _init_(self, conn):
+    def __init__(self, conn):
         self._conn = conn
 
     def insert(self, vaccine):
-        self._conn.executr("""INSERT INTO Vaccines (id, date, supplier, quantity) VALUES (?,?,?,?)""",
+        self._conn.execute("""INSERT INTO Vaccines (id, date, supplier, quantity) VALUES (?,?,?,?)""",
                            [vaccine.id, vaccine.date, vaccine.supplier, vaccine.quantity])
 
     def find(self, vaccine_id):
         c = self._conn.cursor()
         c.execute("""SELECT id FROM vaccines WHERE  id =?""", [vaccine_id])
 
-    def creat_index(self):
-        ("""CREATE INDEX vaccins_by_date ON _Vaccines date """)
-
 
 class _Suppliers:
-    def _init_(self, conn):
+    def __init__(self, conn):
         self._conn = conn
 
     def insert(self, supplier):
@@ -31,11 +28,11 @@ class _Suppliers:
 
 
 class _Clinics:
-    def _init_(self, conn):
+    def __init__(self, conn):
         self._conn = conn
 
     def insert(self, clinic):
-        self._conn.executr("""INSERT INTO Clinics (id, location, demand, logistic) VALUE (?,?,?,?)""",
+        self._conn.execute("""INSERT INTO Clinics (id, location, demand, logistic) VALUE (?,?,?,?)""",
                            [clinic.id, clinic.location, clinic.demand, clinic.logistic])
 
     def find(self, clinic_id):
@@ -49,7 +46,7 @@ class _Clinics:
 
 
 class _Logistics:
-    def _init_(self, conn):
+    def __init__(self, conn):
         self._conn = conn
 
     def insert(self, logistic):

@@ -1,25 +1,23 @@
 #The Repository singelton
 import atexit
 import sqlite3
-
+import os
 from dao import _Vaccines, _Suppliers, _Clinics, _Logistics
 
-
 class repositery:
-    def _init_(self):
-        self._conn = sqlite3.connect('databsde.db')
+    def __init__(self):
+        self.conn = sqlite3.connect('databsde.db')
         self.vaccines = _Vaccines(self.conn)
         self.suppliers = _Suppliers(self.conn)
         self.clinics = _Clinics(self.conn)
         self.logistics = _Logistics(self.conn)
-        self.create_tables()
 
     def close(self):
-        self._conn.commit()
-        self._conn.close()
+        self.conn.commit()
+        self.conn.close()
 
     def create_tables(self):
-        self._conn.executescript("""
+        self.conn.executescript("""
         CREATE TABLE vaccines (
         id INTEGER PRIMARY KEY,
         date DATE NOT NULL,
@@ -45,11 +43,10 @@ class repositery:
         name STRING NOT NULL 
         count_sent INTEGER NOT NULL 
         count_received INTEGER NOT NULL
-        );
-        """)
+        );""")
 
     def send_shipment(self, location, amount):
-        cursor = self._conn
+        cursor = self.conn
         tuple_clinics_by_location = cursor.execute("""SELECT * FROM clinics WHERE location=?""", [location])
         tuple_clinics_by_location[2] = tuple_clinics_by_location[2]-amount
         vaccine_by_date = cursor.execute("""SELECT * FROM vaccines ORDER BY date ASK """)
@@ -78,7 +75,7 @@ class repositery:
         cursor.execute(""" UPDATE logistics SET count_sent=sent_inventory WHERE id=?""", [logistic_id])
 
     def receive_shipment(self, name, amount, date):
-        cursor = self._conn
+        cursor = self.conn
         suplier_id = cursor.execute("""SELECT id FROM suppliers WHERE name=? """, [name])
         max_id = cursor.execute("""SELECT id FROM vaccines ORDER BY date ASK """).fetchone()
         new_id = max_id+1
@@ -88,7 +85,7 @@ class repositery:
         cursor.execute("""UPDATE logistics SET count_receive=receive WHERE name=?""", [name])
 
     def summary(self):
-        cursor = self._conn
+        cursor = self.conn
         total_inventory = cursor.execute(""" SELECT SUM quantity FROM vaccines """)
         total_demant = cursor.execute("""SELECT SUM demand FROM clinics""")
         total_received = cursor.execute("""SELECT SUM count_receive FROM logistics""")
@@ -97,5 +94,5 @@ class repositery:
         return list
 
 
-repo = repositery
-#texit.register(repo._close)
+repo = repositery()
+atexit.register(repo.close)

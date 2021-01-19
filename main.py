@@ -2,16 +2,19 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import os
-import sqlite3
-import atexit
+#import os
+#import sqlite3
+#import atexit
+#from dto import Vaccine, Supplier, Clinic, Logistic
+import repositery
 import sys
-from dto import Vaccine, Supplier, Clinic, Logistic
+from dto import Vaccine
 from repositery import repo
 
 
 def main():
-   # repo = _repositery()
+#    repo.create_tables()
+    print(5)
     inputfile = open("config.txt", "r")
     line = inputfile.readline()
     indexlist = line.split(",")
@@ -27,7 +30,8 @@ def main():
         line_by_list = line.split(",")
 
         if counter <= vaccines_amount:
-            repo.vaccines.insert(line_by_list)
+            repo.vaccines.insert(Vaccine(*line_by_list))
+#            repo._Vaccines.insert(Vaccine(*line_by_list))
 
         if counter > vaccines_amount & counter < clinics_amount:
             repo.suppliers.insert(line_by_list)
