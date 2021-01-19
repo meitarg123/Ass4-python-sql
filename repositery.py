@@ -104,8 +104,6 @@ class repositery:
         receive = cursor.execute(""" SELECT count_received FROM logistics WHERE id=?""", [log_id]).fetchone()[0]
         count_received = int(receive) + amount
         cursor.execute("""UPDATE logistics SET count_received=? WHERE id=?""", [count_received, log_id])
-        check = cursor.execute("""SELECT  count_received FROM logistics WHERE id=?""",[log_id]).fetchone()[0]
-        print(check)
 
     def summary(self):
         cursor = self.conn

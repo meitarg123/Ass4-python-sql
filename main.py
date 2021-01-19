@@ -9,7 +9,8 @@ from repositery import repo
 
 def main():
     repo.create_tables()
-    inputfile = open("config.txt", "r")
+    #inputfile = open("config.txt", "r")
+    inputfile = open(sys.argv[1], "r")
     line = inputfile.readline()
     indexlist = line.split(",")
 
@@ -44,7 +45,8 @@ def main():
                 repo.logistics.insert(log)
 
 
-    orders = open("orders.txt", "r")  #sys.argv[2]
+    #orders = open("orders.txt", "r")  #sys.argv[2]
+    orders = open(sys.argv[2], "r")
     order = orders.readline()
     order_by_list = order.split(",")
     while order_by_list != ['']:
@@ -60,7 +62,8 @@ def main():
             repo.receive_shipment(name, amount, date)
 
         if order != ['']:
-            output = open("summary.txt", "a")
+            #output = open("summary.txt", "a")
+            output = open(sys.argv[3], "a")
             output.write(repo.summary())
             order = orders.readline()
             order_by_list = order.split(",")
