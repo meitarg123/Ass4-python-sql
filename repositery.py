@@ -1,7 +1,7 @@
 #The Repository singelton
 import atexit
 import sqlite3
-import os
+#import os
 from dao import _Vaccines, _Suppliers, _Clinics, _Logistics
 
 class repositery:
@@ -11,87 +11,112 @@ class repositery:
         self.suppliers = _Suppliers(self.conn)
         self.clinics = _Clinics(self.conn)
         self.logistics = _Logistics(self.conn)
+        self.max_id_vaccine = 0
 
     def close(self):
         self.conn.commit()
         self.conn.close()
 
     def create_tables(self):
-        self.conn.executescript("""
+        self.conn.execute(""" DROP TABLE IF EXISTS vaccines""")
+        self.conn.execute(""" DROP TABLE IF EXISTS suppliers""")
+        self.conn.execute(""" DROP TABLE IF EXISTS clinics""")
+        self.conn.execute(""" DROP TABLE IF EXISTS logistics""")
+        self.conn.execute("""
         CREATE TABLE vaccines (
-        id INTEGER PRIMARY KEY,
-        date DATE NOT NULL,
-        supplier INTEGER REFERENCES Supplier(id),
-        quantity INTEGER NOT NULL
-        );
-        
+        id       INTEGER    PRIMARY KEY,
+        date     DATE   NOT NULL,
+        supplier INTEGER    REFERENCES Supplier(id),
+        quantity INTEGER    NOT NULL )
+        """)
+
+        self.conn.execute("""
         CREATE TABLE suppliers (
-        id INTEGER PRIMARY KEY
-        name STRING NOT NULL,
-        logistic INTEGER REFERENCES Logistic(id)
-        );
-        
+        id  INTEGER  PRIMARY KEY,
+        name     STRING NOT NULL,
+        logistic INTEGER REFERENCES Logistic(id))
+        """)
+
+        self.conn.execute("""
         CREATE TABLE clinics(
-        id INTEGER PRIMARY KEY
-        location STRING NOT NULL,
-        demand INTEGER NOT NULL,
-        logistic INTEGER REFERENCES Logistic(id)
-        );
-        
+        id       INTEGER PRIMARY KEY,
+        location STRING  NOT NULL,
+        demand   INTEGER NOT NULL,
+        logistic INTEGER REFERENCES Logistic(id))
+        """)
+
+        self.conn.execute("""
         CREATE TABLE logistics(
-        id INTEGER PRIMARY KEY 
-        name STRING NOT NULL 
-        count_sent INTEGER NOT NULL 
-        count_received INTEGER NOT NULL
-        );""")
+        id             INTEGER PRIMARY KEY ,
+        name           TEXT NOT NULL, 
+        count_sent     INTEGER NOT NULL, 
+        count_received INTEGER NOT NULL)
+        """)
 
     def send_shipment(self, location, amount):
         cursor = self.conn
-        tuple_clinics_by_location = cursor.execute("""SELECT * FROM clinics WHERE location=?""", [location])
-        tuple_clinics_by_location[2] = tuple_clinics_by_location[2]-amount
-        vaccine_by_date = cursor.execute("""SELECT * FROM vaccines ORDER BY date ASK """)
-        vaccine = vaccine_by_date.fetchone()
+        max_id_vaccine = cursor.execute("""SELECT id FROM vaccines ORDER BY id DESC """).fetchone()[0]
+        self.max_id_vaccine = max_id_vaccine
+        tmpamount= int(amount)
+        amount = int(amount)
+        counter = 0
+        list_clinics_by_location = cursor.execute("""SELECT * FROM clinics WHERE location=?""", [location]).fetchone()
+        demand = int(list_clinics_by_location[2])
+        ans = demand - amount
+        cursor.execute("""UPDATE clinics SET demand=? WHERE location=?""", [ans, location])
+        vaccine_by_date = cursor.execute("""SELECT * FROM vaccines ORDER BY date ASC """).fetchall()
+        vaccine = vaccine_by_date[counter]
         vaccsine_quantity = vaccine[3]
         id =vaccine[0]
         if vaccsine_quantity > amount:
-            vaccsine_quantity = vaccsine_quantity - amount
-            cursor.execute("""UPDATE vaccines SET quantity=vaccsine_quantity WHERE ID=?""", [id])
+            quantity = vaccsine_quantity - amount
+            cursor.execute("""UPDATE vaccines SET quantity=? WHERE ID=?""", [ quantity, id])
         else:
             while amount > 0:
                 curr_id = vaccine[0]
                 inventory = vaccine[3]
                 if inventory > amount:
                     inventory = inventory-amount
-                    cursor.execute("""UPDATE vaccines SET quantity=inventory WHERE ID=?""", [id])
+                    cursor.execute("""UPDATE vaccines SET quantity=? WHERE ID=?""", [inventory, curr_id])
                     amount = 0
                 else:
                     amount = amount - inventory
                     cursor.execute("""DELETE FROM vaccines WHERE id=?""", [curr_id])
-                vaccine = vaccine_by_date.fetchone() #check if its in while(it should be in while out of else
+                    counter = counter + 1
+                vaccine = vaccine_by_date[counter]
 
-        logistic_id = tuple_clinics_by_location[3]
-        sent_inventory = cursor.execute("""SELECT count_sent FROM logistics WHERE id=?""", [logistic_id])
-        sent_inventory = sent_inventory+amount
-        cursor.execute(""" UPDATE logistics SET count_sent=sent_inventory WHERE id=?""", [logistic_id])
+        logistic_id = list_clinics_by_location[3]
+        sent_inventory = cursor.execute("""SELECT count_sent FROM logistics WHERE id=?""", [logistic_id]).fetchone()
+        count_sent = sent_inventory[0]
+        count_sent = count_sent + tmpamount
+        cursor.execute(""" UPDATE logistics SET count_sent=? WHERE id=?""", [count_sent, logistic_id])
 
     def receive_shipment(self, name, amount, date):
         cursor = self.conn
-        suplier_id = cursor.execute("""SELECT id FROM suppliers WHERE name=? """, [name])
-        max_id = cursor.execute("""SELECT id FROM vaccines ORDER BY date ASK """).fetchone()
-        new_id = max_id+1
-        cursor.execute("""INSERT INTO vaccines (id, date, supplier, quantity) VALUES (?,?,?,? )""",[new_id,date, suplier_id, amount ])
-        receive = cursor.execute(""" SELECT count_receive FROM logistics WHERE name=?""", [name])
-        receive = receive+amount
-        cursor.execute("""UPDATE logistics SET count_receive=receive WHERE name=?""", [name])
+        amount = int(amount)
+        suplier_id = cursor.execute("""SELECT id FROM suppliers WHERE name=? """, [name]).fetchone()
+        supid=suplier_id[0]
+        self.max_id_vaccine = self.max_id_vaccine + 1
+        cursor.execute("""INSERT INTO vaccines (id, date, supplier, quantity) VALUES (?, ?, ?, ?)""", [self.max_id_vaccine, date, supid, int(amount)])
+
+        logistic_id = cursor.execute("""SELECT logistic FROM suppliers where name=?""", [name]).fetchone()
+        log_id = logistic_id[0]
+        receive = cursor.execute(""" SELECT count_received FROM logistics WHERE id=?""", [log_id]).fetchone()[0]
+        count_received = int(receive) + amount
+        cursor.execute("""UPDATE logistics SET count_received=? WHERE id=?""", [count_received, log_id])
+        check = cursor.execute("""SELECT  count_received FROM logistics WHERE id=?""",[log_id]).fetchone()[0]
+        print(check)
 
     def summary(self):
         cursor = self.conn
-        total_inventory = cursor.execute(""" SELECT SUM quantity FROM vaccines """)
-        total_demant = cursor.execute("""SELECT SUM demand FROM clinics""")
-        total_received = cursor.execute("""SELECT SUM count_receive FROM logistics""")
-        total_sent = cursor.execute("""SELECT SUM count_sent FROM logistics""")
-        list = [total_inventory, total_demant, total_received, total_sent ]
-        return list
+        total_inventory = cursor.execute(""" SELECT SUM(quantity) FROM vaccines """).fetchone()[0]
+        total_demant = cursor.execute("""SELECT SUM(demand) FROM clinics""").fetchone()[0]
+        total_received = cursor.execute("""SELECT SUM(count_received) FROM logistics""").fetchone()[0]
+        total_sent = cursor.execute("""SELECT SUM(count_sent) FROM logistics""").fetchone()[0]
+        list = [str(total_inventory), str(total_demant), str(total_received), str(total_sent)]
+        ans = ', '.join(list) + '\n'
+
+        return ans
 
 
 repo = repositery()
